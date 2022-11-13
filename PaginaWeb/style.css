@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital@1&family=Titillium+Web:wght@300&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    text-decoration: none;
+}
+body {
+    font-size: 100%;
+    background: linear-gradient(115.95deg, #5DADEC 0.62%, #00080F 101.28%);
+}
+    .cabecalho {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-around;
+        padding: 18px;
+    }
+    .cabecalho-menu{
+        display: flex;
+        gap: 30px;
+    }
+    .cabecalho-menu-item {
+        font-family: 'Titillium Web', sans-serif;
+    }
+    .content {
+        margin-bottom: 48px;
+        border-top: 1px solid  #00080F;
+    }
+    .main-content {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-around;
+    }
+    .main-content-text {
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+    }
+    .main-content-title {
+        font-family: 'Roboto Mono', monospace;
+        font-weight: 400;
+        font-size: 50px;
+    }
+    .main-content-subtitle {
+        font-family: 'Titillium Web', sans-serif;
+        font-weight: 400;
+        font-size: 24px;
+    }
+    .main-content-button {
+        font-family: 'Titillium Web', sans-serif;
+        font-weight: 400;
+        font-size:18px;
+        background-color: #8D9EA8;
+        width: 180px;
+        height: 36px;
+        border: none;
+        box-shadow: 4px 5px 4px rgba(0, 0, 0, 0.5);
+        border-radius: 5px;
+    }
+    .sub-content {
+        font-family: 'Titillium Web', sans-serif;
+        font-weight: 400;
+        font-size: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        margin-top: 48px;
+    }
+    .sub-content-text{
+        border-top: 1px solid  #00080F;
+        padding-top: 20px;
+
+    }

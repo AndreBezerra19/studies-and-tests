@@ -5,39 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pagina Web - primeiros arquivo html</title>
     <meta name="description" content="Essa é minha primeira pagina web">
+    <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 
 <body>
-    <header>
-        <img>
-        <nav>
-            <a>Comunidade</a>
-            <a>Tutorial</a>
-            <a>Documentos</a>
-            <a>Comandos</a>
+    <header class="cabecalho">
+        <img class="cabecalho-imagem" src="angularjs-original.svg" alt="logo" width="50" height="60">
+        <nav class="cabecalho-menu">
+            <a class="cabecalho-menu-item"> <strong>Comunidade</strong> </a>
+            <a class="cabecalho-menu-item"> <strong>Tutorial</strong> </a>
+            <a class="cabecalho-menu-item"> <strong>Documentos</strong> </a>
+            <a class="cabecalho-menu-item"> <strong>Comandos</strong> </a>
         </nav>
     </header>
-    <main>
-        <section>
-            <div>
-                <h1>Andre Bezerra Webpage</h1>
-                <h2>Pagina web criada para teste e estudos</h2>
-                <button>Clique aqui</button>
+    <main class="content">
+        <section class="main-content">
+            <div class="main-content-text">
+                <h1 class="main-content-title">Andre Bezerra Webpage</h1>
+                <h2 class="main-content-subtitle">Pagina web criada para teste e estudos</h2>
+                <button class="main-content-button">Clique aqui</button>
 
             </div>
-            <img>
+            <img class="main-content-imagem" src="21004063.png" alt="imagem" width="500" height="400">
         </section>
-        <section>
-            <h3>O que tem aqui?</h3>
-            <p>1 - Primeiro teste de criação de uma pagina web</p>
-            <p>2 - Apredendo a usar <strong> HTML </strong></p>
-            <p>3 - Aprendendo a usar <strong> CSS </strong></p>
+        <section class="sub-content">
+            <h3 class="sub-content-text">O que tem aqui?</h3>
+            <p class="sub-content-part">1 - Primeiro teste de criação de uma pagina web</p>
+            <p class="sub-content-part">2 - Apredendo a usar <strong> HTML </strong></p>
+            <p class="sub-content-part">3 - Aprendendo a usar <strong> CSS </strong></p>
         </section>
 
     </main>
 
-    <footer>
-
+    <footer class="rodape">
+        <img class="rodape-imagem" src="angularjs-original.svg" alt="logo" width="100" height="200">
     </footer>
 </body>
 </html>
