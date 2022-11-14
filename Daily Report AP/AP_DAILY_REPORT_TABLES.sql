@@ -1,0 +1,377 @@
+-- Databricks notebook source
+-- MAGIC %md #AP Daily report tables
+-- MAGIC this notebook creates the necessary tables to assemble the dashboard of the daily report of accounts to be deleted
+
+-- COMMAND ----------
+
+-- MAGIC %python
+-- MAGIC from datetime import datetime, timedelta
+-- MAGIC from timeit import default_timer as timer
+-- MAGIC start = timer()
+
+-- COMMAND ----------
+
+-- MAGIC %md ##VIM informations
+
+-- COMMAND ----------
+
+-- MAGIC  %sql 
+-- MAGIC use prod_gbs_finance_latam.gold_data;
+-- MAGIC create or replace table AP_DAILY_VIM as
+-- MAGIC 
+-- MAGIC select
+-- MAGIC   *,
+-- MAGIC   CASE 
+-- MAGIC      WHEN AP4_DAYS_TO_DUE <= 0        
+-- MAGIC        THEN 'Vencido'
+-- MAGIC      WHEN AP4_DAYS_TO_DUE >= 1 and
+-- MAGIC           AP4_DAYS_TO_DUE <= 10
+-- MAGIC        THEN 'Atenção'
+-- MAGIC        else 'A Vencer'
+-- MAGIC   END AS AP4_AGING_VIM,
+-- MAGIC    
+-- MAGIC   case
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Invalid Vendor (PO)'
+-- MAGIC       then 'Fornecedor inválido'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Suspected Duplicate (PO)'
+-- MAGIC       then 'Susp. Duplicidade'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Due date Mismatch'
+-- MAGIC       then 'Incompatibilidade de vencimento'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Manual Check Needed / Missing Data for Indexing Li'
+-- MAGIC       then 'Verificação manual necessária'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Invalid Vendor CNPJ/CPF Number'
+-- MAGIC       then 'CPF/CNPJ do Fornecedor inválido'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Tolerance exceeded (PO)'
+-- MAGIC       then 'Limite de Tolerância Excedido'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Service Entry Required - Enhanced Check ('
+-- MAGIC       then 'Entrada de serviço necessária'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Delivery Note Not Found'
+-- MAGIC       then 'Nota de entrega não encontrada'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Process PO Invoice (PO) OCR Service'
+-- MAGIC       then 'Processar fatura com OC - Serviço'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Invalid Hydro CNPJ Number'
+-- MAGIC       then 'CNPJ Hydro inválido'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Invalid Currency (PO)'
+-- MAGIC       then 'Verificar moeda'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'SES not approved'
+-- MAGIC       then 'FRS não aprovada'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Missing Mandatory Information (PO)'
+-- MAGIC       then 'Falta informação obrigatória '
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Invoice Older than Allowed (PO)'
+-- MAGIC       then 'Fatura mais antiga do que o permitido'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Validate "Inscrição Estadual" Number'
+-- MAGIC       then 'Validar número da Inscrição Estadual'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Invalid Tax Info (PO)'
+-- MAGIC       then 'Informação de imposto inválida (OC)'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Wait for GR - Enhanced Check (PO)'
+-- MAGIC       then 'Aguardar GR'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Missing PO Number'
+-- MAGIC       then 'Informar número do pedido'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Invalid PO Number (PO)'
+-- MAGIC       then 'Informar número do pedido'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Vendor Mismatch (PO)'
+-- MAGIC       then 'Divergência de fornecedor'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Unable to Match PO Lines (PO)'
+-- MAGIC       then 'Derivação automática de linha de PO'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Missing Material Origin'
+-- MAGIC       then 'NBS não informado'
+-- MAGIC     when AP4_EXCEPTION_REASON = 'Plant/Branch Mismatch'
+-- MAGIC       then 'Planta ou Filial  inválida ou não informa'
+-- MAGIC       else 'Outros'
+-- MAGIC     end as Excecao
+-- MAGIC from
+-- MAGIC   prod_gbs_finance_latam.bronze_data.ap_daily_vim as VIM
+
+-- COMMAND ----------
+
+-- MAGIC %md ##Materials informations
+
+-- COMMAND ----------
+
+-- MAGIC %sql
+-- MAGIC use prod_gbs_finance_latam.gold_data;
+-- MAGIC create or replace table AP_DAILY_MATERIAIS as
+-- MAGIC 
+-- MAGIC select
+-- MAGIC   FBL3N.AP1_COMPANY_CODE,  --informa o codigo da empresa do documento
+-- MAGIC   FBL3N.AP1_DOCUMENT_TYPE,  --Informa o tipo do documento
+-- MAGIC   FBL3N.AP1_DOCUMENT_DATE,  --Informa a data do documento
+-- MAGIC   FBL3N.AP1_POSTING_DATE,  --Informa a data de entrada do documento no sistema
+-- MAGIC   FBL3N.AP1_VENDOR,  --Informa codigo do fornecedor do documento
+-- MAGIC   FBL3N.AP1_NAME_1,  --Informa nome do fornecedor do documento
+-- MAGIC   FBL3N.AP1_REFERENCE,  --Informa a referencia do documento composta por numero e seria da NF
+-- MAGIC   VIM.AP4_PURCHASING_DOCUMENT,  -- Coluna com numero do pedido de compra
+-- MAGIC   
+-- MAGIC   case
+-- MAGIC     when FBL3N.AP1_TEXT = 'Ajuste CFOP'
+-- MAGIC       then 'Ajuste CFOP'
+-- MAGIC     when FBL3N.AP1_TEXT = 'Ajuste IVA'
+-- MAGIC       then 'Ajuste IVA'
+-- MAGIC     when FBL3N.AP1_TEXT = 'Ajuste NCM / alíquota'
+-- MAGIC       then 'Ajuste NCM / alíquota'
+-- MAGIC     when FBL3N.AP1_TEXT = 'Cadastrar fornecedor /  Parceiro'
+-- MAGIC       then 'Cadastrar fornecedor /  Parceiro'
+-- MAGIC     when FBL3N.AP1_TEXT = 'Falta NF'
+-- MAGIC       then 'Falta NF'
+-- MAGIC     when FBL3N.AP1_TEXT = 'OM fechada / Orç. excedido'
+-- MAGIC       then 'OM fechada / Orç. excedido'
+-- MAGIC     when FBL3N.AP1_TEXT = 'Pendente almoxarifado'
+-- MAGIC       then 'Pendente almoxarifado'
+-- MAGIC     when FBL3N.AP1_TEXT = 'Pendente suprimentos'
+-- MAGIC       then 'Pendente suprimentos'
+-- MAGIC     else 'Outros'
+-- MAGIC     end as AP1_TEXT0_PADRAO,  --Aplica padronização dos textos de motivos 
+-- MAGIC     
+-- MAGIC   CURRENT_DATE() as AP1_UPDATED,  -- tras a data do dia corrente
+-- MAGIC   
+-- MAGIC   CASE 
+-- MAGIC      WHEN FBL3N.AP1_COMPANY_CODE = 'ADN' 
+-- MAGIC        THEN 'Romulo'
+-- MAGIC      WHEN FBL3N.AP1_COMPANY_CODE = 'BRP'
+-- MAGIC        THEN 'Rodrigo'
+-- MAGIC      WHEN FBL3N.AP1_COMPANY_CODE = 'PAM'
+-- MAGIC        THEN 'Stefanie'
+-- MAGIC      WHEN FBL3N.AP1_COMPANY_CODE = 'CPA' OR
+-- MAGIC          FBL3N.AP1_COMPANY_CODE = 'EGA' OR
+-- MAGIC          FBL3N.AP1_COMPANY_CODE = 'HCO' OR
+-- MAGIC          FBL3N.AP1_COMPANY_CODE = 'AHB' OR
+-- MAGIC          FBL3N.AP1_COMPANY_CODE = 'HNB' OR
+-- MAGIC          FBL3N.AP1_COMPANY_CODE = 'HRB' OR
+-- MAGIC          FBL3N.AP1_COMPANY_CODE = 'CPH' OR
+-- MAGIC          FBL3N.AP1_COMPANY_CODE = 'HSF'
+-- MAGIC        THEN 'Erison'
+-- MAGIC      when length(FBL3N.AP1_VENDOR) < 7
+-- MAGIC        then 'CE/IC'
+-- MAGIC        ELSE 'ERROR'
+-- MAGIC   END as AP1_RESPONSAVEL,  --define o responsavel pelo documento de acordo com a regra de empresas
+-- MAGIC  datediff(CURRENT_DATE(), FBL3N.AP1_POSTING_DATE) AS AP1_SLA,  --mostra o sla de atendimento de cada documento
+-- MAGIC    CASE 
+-- MAGIC      WHEN datediff(CURRENT_DATE(), FBL3N.AP1_DOCUMENT_DATE) <= 0 AND
+-- MAGIC           datediff(CURRENT_DATE(), FBL3N.AP1_DOCUMENT_DATE) >= 1 OR
+-- MAGIC           datediff(CURRENT_DATE(), FBL3N.AP1_DOCUMENT_DATE) <= 20
+-- MAGIC        THEN 'A Vencer'
+-- MAGIC      WHEN datediff(CURRENT_DATE(), FBL3N.AP1_DOCUMENT_DATE) >= 21 and
+-- MAGIC           datediff(CURRENT_DATE(), FBL3N.AP1_DOCUMENT_DATE) <= 25
+-- MAGIC        THEN 'Atencao'
+-- MAGIC        else 'Critico'
+-- MAGIC    END AS AP1_AGING, -- categoriza os documentos por padrões de aging
+-- MAGIC    
+-- MAGIC    if (contains(FBL3N.AP1_TEXT, 'GL') is true, "GL_CASE", "NO_CASE_GL") as AP1_CASOS_GL,  --cria coluna para utilização do filtro de casos de GL
+-- MAGIC   
+-- MAGIC  case
+-- MAGIC     when VIM.AP4_DOCUMENT_ID is null
+-- MAGIC       then 'NF não recebida'
+-- MAGIC       else VIM.AP4_DOCUMENT_ID
+-- MAGIC   end as Status_VIM,  --Cria uma coluna com informação de status da NF no vim recebida ou não recebida
+-- MAGIC   
+-- MAGIC  case
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Invalid Vendor (PO)'
+-- MAGIC       then 'Fornecedor inválido'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Suspected Duplicate (PO)'
+-- MAGIC       then 'Susp. Duplicidade'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Due date Mismatch'
+-- MAGIC       then 'Incompatibilidade de vencimento'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Manual Check Needed / Missing Data for Indexing Li'
+-- MAGIC       then 'Verificação manual necessária'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Invalid Vendor CNPJ/CPF Number'
+-- MAGIC       then 'CPF/CNPJ do Fornecedor inválido'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Tolerance exceeded (PO)'
+-- MAGIC       then 'Limite de Tolerância Excedido'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Service Entry Required - Enhanced Check ('
+-- MAGIC       then 'Entrada de serviço necessária'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Delivery Note Not Found'
+-- MAGIC       then 'Nota de entrega não encontrada'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Process PO Invoice (PO) OCR Service'
+-- MAGIC       then 'Processar fatura com OC - Serviço'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Invalid Hydro CNPJ Number'
+-- MAGIC       then 'CNPJ Hydro inválido'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Invalid Currency (PO)'
+-- MAGIC       then 'Verificar moeda'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'SES not approved'
+-- MAGIC       then 'FRS não aprovada'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Missing Mandatory Information (PO)'
+-- MAGIC       then 'Falta informação obrigatória '
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Invoice Older than Allowed (PO)'
+-- MAGIC       then 'Fatura mais antiga do que o permitido'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Validate "Inscrição Estadual" Number'
+-- MAGIC       then 'Validar número da Inscrição Estadual'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Invalid Tax Info (PO)'
+-- MAGIC       then 'Informação de imposto inválida (OC)'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Wait for GR - Enhanced Check (PO)'
+-- MAGIC       then 'Aguardar GR'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Missing PO Number'
+-- MAGIC       then 'Informar número do pedido'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Invalid PO Number (PO)'
+-- MAGIC       then 'Informar número do pedido'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Vendor Mismatch (PO)'
+-- MAGIC       then 'Divergência de fornecedor'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Unable to Match PO Lines (PO)'
+-- MAGIC       then 'Derivação automática de linha de PO'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Missing Material Origin'
+-- MAGIC       then 'NBS não informado'
+-- MAGIC     when VIM.AP4_EXCEPTION_REASON = 'Plant/Branch Mismatch'
+-- MAGIC       then 'Planta ou Filial  inválida ou não informa'
+-- MAGIC       else 'Outros'
+-- MAGIC  end as Excecao,  --altera os textos de regras de exceções para versões padronizdas
+-- MAGIC     
+-- MAGIC  CASE 
+-- MAGIC      WHEN VIM.AP4_DAYS_TO_DUE <= 0        
+-- MAGIC        THEN 'Vencido'
+-- MAGIC      WHEN VIM.AP4_DAYS_TO_DUE >= 1 and
+-- MAGIC           VIM.AP4_DAYS_TO_DUE <= 10
+-- MAGIC        THEN 'Atenção'
+-- MAGIC        else 'A Vencer'
+-- MAGIC  END AS AGING_VIM  --cria categoria de aging baseada nos dados de dias do documento no VIM
+-- MAGIC     
+-- MAGIC from
+-- MAGIC   prod_gbs_finance_latam.bronze_data.ap_daily_materiais as FBL3N
+-- MAGIC left join prod_gbs_finance_latam.bronze_data.ap_daily_vim as VIM on
+-- MAGIC   VIM.AP4_COMPANY_CODE = FBL3N.AP1_COMPANY_CODE and
+-- MAGIC   VIM.AP4_REFERENCE = FBL3N.AP1_REFERENCE and
+-- MAGIC   VIM.AP4_DOCUMENT_DATE = FBL3N.AP1_DOCUMENT_DATE 
+
+-- COMMAND ----------
+
+-- MAGIC %md ##Service informations
+
+-- COMMAND ----------
+
+-- MAGIC %sql
+-- MAGIC use prod_gbs_finance_latam.gold_data;
+-- MAGIC create or replace table AP_DAILY_SERVICOS as
+-- MAGIC 
+-- MAGIC select
+-- MAGIC   SERV.*,
+-- MAGIC   CURRENT_DATE() as Hoje,
+-- MAGIC datediff(CURRENT_DATE(), SERV.AP2_POSTING_DATE) AS Dias,
+-- MAGIC CASE 
+-- MAGIC      WHEN AP2_COMPANY_CODE = 'ADN' 
+-- MAGIC        THEN 'Romulo'
+-- MAGIC      WHEN AP2_COMPANY_CODE = 'BRP'
+-- MAGIC        THEN 'Rodrigo'
+-- MAGIC      WHEN AP2_COMPANY_CODE = 'PAM'
+-- MAGIC        THEN 'Stefanie'
+-- MAGIC      WHEN AP2_COMPANY_CODE = 'CPA' OR
+-- MAGIC          AP2_COMPANY_CODE = 'EGA' OR
+-- MAGIC          AP2_COMPANY_CODE = 'HCO' OR
+-- MAGIC          AP2_COMPANY_CODE = 'AHB' OR
+-- MAGIC          AP2_COMPANY_CODE = 'HNB' OR
+-- MAGIC          AP2_COMPANY_CODE = 'HRB' OR
+-- MAGIC          AP2_COMPANY_CODE = 'CPH' OR
+-- MAGIC          AP2_COMPANY_CODE = 'HSF'
+-- MAGIC        THEN 'Erison'
+-- MAGIC        ELSE 'ERROR'
+-- MAGIC   END as Responsavel,
+-- MAGIC 
+-- MAGIC    if(F_Serv.AUX1_CRTICOS == "URGENTE", 'Urgente',
+-- MAGIC     CASE 
+-- MAGIC      WHEN datediff(CURRENT_DATE(), SERV.AP2_POSTING_DATE) <= 24
+-- MAGIC        THEN 'Atencao'
+-- MAGIC        else 'Critico'
+-- MAGIC     END)  as AGING
+-- MAGIC from
+-- MAGIC   prod_gbs_finance_latam.bronze_data.ap_daily_servicos as SERV
+-- MAGIC left join prod_gbs_finance_latam.bronze_data.ap_daily_serv_vendors as F_Serv on
+-- MAGIC   F_Serv.AUX1_FORNECEDOR2 = SERV.AP2_VENDOR
+
+-- COMMAND ----------
+
+-- MAGIC %md ##Freight informations
+
+-- COMMAND ----------
+
+-- MAGIC %sql
+-- MAGIC 
+-- MAGIC use prod_gbs_finance_latam.gold_data;
+-- MAGIC create or replace table ap_daily_fretes as
+-- MAGIC 
+-- MAGIC select
+-- MAGIC   distinct (concat(FRT.AP3_COMPANY_CODE,FRT.AP3_BILL_OF_LADING)) as AP3_REF_KEY,
+-- MAGIC 
+-- MAGIC   FRT.*,
+-- MAGIC     datediff(CURRENT_DATE(), FRT.AP3_POSTING_DATE) AS AP5_SLA,
+-- MAGIC   case
+-- MAGIC     when datediff(CURRENT_DATE(), FRT.AP3_DOCUMENT_DATE) < 5 
+-- MAGIC       then "CRITICO"
+-- MAGIC       else "ATENÇÃO"
+-- MAGIC     end as AP3_AGING,
+-- MAGIC 
+-- MAGIC   case
+-- MAGIC     when VIM.AP4_DOCUMENT_ID is null
+-- MAGIC       then 'Não encontrado'
+-- MAGIC       else VIM.AP4_DOCUMENT_ID
+-- MAGIC   end as DOC_ID,
+-- MAGIC   
+-- MAGIC   VIM.AP4_VENDOR_NAME as TRANSPORTADORA
+-- MAGIC     
+-- MAGIC from
+-- MAGIC   prod_gbs_finance_latam.bronze_data.ap_daily_fretes as FRT
+-- MAGIC left join prod_gbs_finance_latam.bronze_data.ap_daily_vim as VIM on
+-- MAGIC   VIM.AP4_DP_DOCUMENT_TYPE = 'ZBR_FREIGT' and
+-- MAGIC   FRT.AP3_COMPANY_CODE = VIM.AP4_COMPANY_CODE and
+-- MAGIC   FRT.AP3_BILL_OF_LADING = VIM.AP4_REFERENCE
+-- MAGIC where 
+-- MAGIC   FRT.AP3_BILL_OF_LADING is not null and
+-- MAGIC   datediff(CURRENT_DATE(), FRT.AP3_POSTING_DATE) < 60
+
+-- COMMAND ----------
+
+-- MAGIC %md ##Cockpit informations
+
+-- COMMAND ----------
+
+-- MAGIC %sql
+-- MAGIC use prod_gbs_finance_latam.gold_data;
+-- MAGIC create or replace table AP_DAILY_COCKPIT as
+-- MAGIC -- INSERT OVERWRITE AP_DAILY_COCKPIT
+-- MAGIC 
+-- MAGIC select
+-- MAGIC *,
+-- MAGIC datediff(CURRENT_DATE(), TO_DATE(LEFT(AP5_DATE_TRANSFERED, 10), 'MM/dd/yyyy')) as AP5_DIAS_AGING,
+-- MAGIC CASE 
+-- MAGIC      WHEN datediff(CURRENT_DATE(), TO_DATE(LEFT(AP5_DATE_TRANSFERED, 10), 'MM/dd/yyyy')) < 0
+-- MAGIC        THEN 'A Vencer'
+-- MAGIC      WHEN datediff(CURRENT_DATE(), TO_DATE(LEFT(AP5_DATE_TRANSFERED, 10), 'MM/dd/yyyy')) > 0 and
+-- MAGIC           datediff(CURRENT_DATE(), TO_DATE(LEFT(AP5_DATE_TRANSFERED, 10), 'MM/dd/yyyy')) <= 5
+-- MAGIC        THEN 'Atenção'
+-- MAGIC        else 'Critico'
+-- MAGIC    END AS AP5_AGING
+-- MAGIC from
+-- MAGIC prod_gbs_finance_latam.bronze_data.ap_daily_cockpit as CP
+
+-- COMMAND ----------
+
+-- MAGIC %md ##FBL1N informations
+
+-- COMMAND ----------
+
+-- MAGIC %sql 
+-- MAGIC use prod_gbs_finance_latam.gold_data;
+-- MAGIC create or replace table AP_DAILY_FBL1N as 
+-- MAGIC -- INSERT OVERWRITE AP_DAILY_FBL1N
+-- MAGIC 
+-- MAGIC select
+-- MAGIC   AP.*,
+-- MAGIC   case
+-- MAGIC     when AP6_VENDOR = AX3_VENDOR
+-- MAGIC       then 'FRETE'
+-- MAGIC       else 'NOTA'
+-- MAGIC     end as AP6_TIPO
+-- MAGIC from
+-- MAGIC   prod_gbs_finance_latam.bronze_data.ap_daily_fbl1n as AP
+-- MAGIC left join prod_gbs_finance_latam.bronze_data.ap_daily_ax_frt as AX_FRT on
+-- MAGIC   AP6_VENDOR = AX3_VENDOR
+-- MAGIC where
+-- MAGIC   left(AP6_VENDOR, 3) <> '309' and
+-- MAGIC   AP6_DOCUMENT_TYPE is not null
+-- MAGIC   
+
+-- COMMAND ----------
+
+-- MAGIC %md #Process executions time
+
+-- COMMAND ----------
+
+-- MAGIC %python
+-- MAGIC end = timer()
+-- MAGIC print(timedelta(seconds=end-start))
