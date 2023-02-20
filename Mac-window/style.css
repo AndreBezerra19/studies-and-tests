@@ -1,0 +1,55 @@
+.mac-window {
+    background: #f5f5f5;
+    border: 1px solid #c3c3c3;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    width: 600px;
+    height: 400px;
+    margin: 50px auto;
+  }
+  
+  .mac-titlebar {
+    background: #f0f0f0;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    height: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+  }
+  
+  .mac-title {
+    font-weight: bold;
+    font-size: 14px;
+  }
+  
+  .mac-controls {
+    display: flex;
+    align-items: center;
+  }
+  
+  .mac-button {
+    width: 12px;
+    height: 12px;
+    margin-left: 5px;
+    border-radius: 50%;
+    border: 1px solid #c3c3c3;
+  }
+  
+  .mac-button-close {
+    background: #f44336;
+  }
+  
+  .mac-button-minimize {
+    background: #f0c225;
+  }
+  
+  .mac-button-zoom {
+    background: #4caf50;
+  }
+  
+  .mac-content {
+    padding: 10px;
+  }
+  
