@@ -6,11 +6,13 @@
     box-sizing: border-box;
 }
 header{
-    background-color: aqua;
+    background-color: rgb(255, 255, 255, 0.3);
+    background: rgb(5,120,232);
     display: flex;
     padding: 1rem;
     justify-content: space-between;
     align-items: center;
+    backdrop-filter: blur(10px);
 }
 main{
     background-color: rgb(182, 209, 243);
